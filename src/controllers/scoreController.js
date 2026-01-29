@@ -3,11 +3,11 @@ import Score from "../models/Score.js";
 
 
 export const AddScore = async (req, res) => {
-    const { score } = req.body;
-    //   const userId = req.userId.id;
+    const { score, quizId } = req.body;
+      const userId = req.userId.id;
 
     try {
-        const newScore = await Score.create({score});
+        const newScore = await Score.create({score, quizId,  userId});
         return res.status(201).json(newScore);
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -15,8 +15,10 @@ export const AddScore = async (req, res) => {
 };
 
 export const getScore = async (req, res) => {
+    const userId = req.userId.id;
+    
     try {
-        const scores = await Score.findAll({
+        const scores = await Score.findAll({where: {userId}
         });
         res.status(200).json(scores);
     } catch (error) {

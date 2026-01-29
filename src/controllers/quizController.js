@@ -112,44 +112,107 @@ export const createQuiz = async (req, res) => {
 export const getQuestionsByQuiz = async (req, res) => {
   try {
     const { id } = req.params;
+    const quizId = parseInt(id, 10);
 
-    const [results] = await sequelize.query(
-      `SELECT q.*,qu.id AS quizId, qu.title AS quizTitle, qu.description AS quizDescription, qu.Nquestions as quizNquestions 
-       FROM question q 
-       INNER JOIN quizquestion qq ON q.id = qq.questionId
-       INNER JOIN quiz qu ON qu.id = qq.quizId
-       WHERE qq.quizId = ${id}`,
-      { replacements: { id } }
-    );
-
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No questions found for this quiz' });
+    // Validation de l'ID
+    if (isNaN(quizId)) {
+      return res.status(400).json({ message: 'ID de quiz invalide' });
     }
 
+    const results = await sequelize.query(
+      `SELECT 
+         q.id AS questionId, 
+         q.content AS questionContent, 
+         q.type, 
+         q.level, 
+         q.duration,
+         a.id AS answerId, 
+         a.content AS answerContent, 
+         a.isTrue AS answerIsTrue,
+         qu.id AS quizId,
+         qu.title AS quizTitle,
+         qu.description AS quizDescription,
+         qu.Nquestions AS quizNquestions
+       FROM question q
+       INNER JOIN quizquestion qq ON q.id = qq.questionId
+       INNER JOIN quiz qu ON qu.id = qq.quizId
+       LEFT JOIN answer a ON a.questionId = q.id
+       WHERE qq.quizId = :id`,
+      { 
+        replacements: { id: quizId }, 
+        type: sequelize.QueryTypes.SELECT 
+      }
+    );
+
+    // Ajouter un log pour inspecter les résultats
+    // console.log('Résultats de la requête SQL:', JSON.stringify(results, null, 2));
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({ message: 'Aucune question trouvée pour ce quiz' });
+    }
+
+    // Vérifier si quizId existe dans le premier résultat
+    if (!results[0].quizId) {
+      console.error('quizId est undefined dans les résultats');
+      console.error('Résultats:', results[0]);
+      return res.status(500).json({ message: 'Structure des données inattendue' });
+    }
+
+    // Extraire les informations du quiz depuis la première ligne
     const quiz = {
       id: results[0].quizId,
       title: results[0].quizTitle,
       description: results[0].quizDescription,
+      Nquestions: results[0].quizNquestions
     };
-    
-    // Map over results to extract question details
-    const questions = results.map(({ id, content, type, level, duration}) => ({
-      id,
-      content,
-      type,
-      level,
-      duration
-    }));
-    
+
+    // Utiliser une Map pour éviter les duplications de questions
+    const questionsMap = new Map();
+
+    results.forEach(row => {
+      const questionId = row.questionId;
+
+      // Si la question n'est pas encore dans la map, l'ajouter
+      if (!questionsMap.has(questionId)) {
+        questionsMap.set(questionId, {
+          id: questionId,
+          content: row.questionContent,
+          type: row.type,
+          level: row.level,
+          duration: row.duration,
+          answers: []
+        });
+      }
+
+      // Si une réponse existe, l'ajouter à la question correspondante
+      if (row.answerId) { // Vérifier si la réponse existe (LEFT JOIN peut retourner NULL)
+        questionsMap.get(questionId).answers.push({
+          id: row.answerId,
+          content: row.answerContent,
+          isTrue: row.answerIsTrue
+        });
+      }
+    });
+
+    // Convertir la Map en tableau
+    const questions = Array.from(questionsMap.values());
+
+    // Log de la structure finale avant envoi
+    console.log('Quiz:', quiz);
+    console.log('Questions:', questions);
+
     res.status(200).json({
       quiz,
       questions,
     });
   } catch (error) {
-    console.error('Error fetching questions for quiz:', error);
-    res.status(500).json({ message: 'Failed to fetch questions for quiz' });
+    console.error('Erreur lors de la récupération des questions et réponses pour le quiz :', error);
+    res.status(500).json({ message: 'Échec de la récupération des questions et réponses pour le quiz' });
   }
 };
+
+
+
 
 export const getQuizById = async (req, res) => {
   const { id } = req.params;

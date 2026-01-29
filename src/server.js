@@ -16,6 +16,8 @@ import SubjectRoute from "./routes/subjectRoute.js";
 import AssessementRoute from "./routes/assessementRoute.js";
 import LevelRoute from "./routes/levelRoute.js";
 import AnswerRoute from "./routes/answerRoute.js";
+import path from "path";
+
 
 const app = express();
 
@@ -26,6 +28,7 @@ const port = 3000;
 
 app.use("/api", router);
 app.use("/api", StudentRoute);
+app.use("/api/uploads", express.static(path.resolve("public/uploads")));
 app.use("/api", TeacherRoute);
 app.use("/api", SchoolRoute);
 app.use("/api", ClasseRoute);

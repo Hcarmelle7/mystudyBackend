@@ -74,7 +74,7 @@ export const getUsers = async (req, res) => {
       },
       //limit: 2
       // include:[{
-      //     model: User,
+      //     model: User, 
       //     attributes:['Username']
       // }]
     });
@@ -109,13 +109,14 @@ export const Login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, roles: user.roles },
       JWT_SECRET,
-      { expiresIn: "2h" }
+      { expiresIn: "10h" }
     );
     res.cookie("token", token, { httpOnly: true, maxAge: 3600000 });
-    res.json({ token, userId: user.id });
+    res.json({ token, userId: user.id, role: user.roles });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+
 };
 
 export const updateProfile = async (req, res) => {
@@ -192,12 +193,12 @@ export const updateUser = async (req, res) => {
 };
 
 export const getCurrentUser = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.userId.id;
 
   try {
     const user = await User.findByPk(userId, {
       attributes: {
-        exclude: ["password", "email", "roles", "fileType"],
+        exclude: ["password", "roles", "fileType"],
       },
     });
     if (!user) {
