@@ -29,11 +29,7 @@ export const getAnswerbyQuestions = async (req, res) => {
     const  questionId  = req.params.id
     try {
         const answers = await Answer.findAll({
-            where: { questionId }, include: [
-                {
-                    model: Question
-                },
-            ],
+            where: { questionId },
         });
         res.status(200).json(answers);
     } catch (error) {

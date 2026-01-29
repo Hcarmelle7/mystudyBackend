@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/register', Register);
 router.post('/login', Login )
 router.get('/users', getUsers);
-router.get('/users/me', isGrantedAccess([role.USER]), getCurrentUser)
+router.get('/users/me', auth, getCurrentUser)
 router.get('/users/:id', idParam, getUsersId);
 router.patch('/profile/update', isGrantedAccess([role.USER]), upload.single('profilePicture'), updateProfile)
 router.get('/country', auth, getCountry)

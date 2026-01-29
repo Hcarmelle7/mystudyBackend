@@ -3,11 +3,12 @@ import Classe from "../models/Classe.js";
 
 
 export const AddClasse = async (req, res) => {
-  const { level, Nstudents, title} = req.body;
+  const { levelId, Nstudents, title} = req.body;
+  const teacherId = req.userId.id;
  
 
   try {
-    const newClasse = await Classe.create({ level, Nstudents, title});
+    const newClasse = await Classe.create({ levelId, Nstudents, teacherId, title});
     return res.status(201).json(newClasse);
   } catch (err) {
     return res.status(500).json({ error: err.message });
